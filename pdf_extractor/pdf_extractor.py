@@ -4,6 +4,7 @@ import re
 import json
 from datetime import datetime
 import pytz
+from robot.api.deco import library, keyword
 
 def extract_pdf_text(pdf_path):
     with open(pdf_path, 'rb') as file:
@@ -65,9 +66,11 @@ def save_to_json(data, output_filename):
         json.dump(data, json_file, indent=2)
     print(f"\nOutput saved to {output_filename}")
 
+@library(scope='GLOBAL')
+@keyword(name='Minus Report Checker')
 def main():
     # Specify the directory containing the PDF files
-    pdf_directory = "./pdf-report/"
+    pdf_directory = "/opt/app/agent/parkee-agent/reportsSaver/"
 
     # Process all PDF files in the directory
     output_data = process_pdf_directory(pdf_directory)
