@@ -68,16 +68,15 @@ def save_to_json(data, output_filename):
 
 @library(scope='GLOBAL')
 @keyword(name='Minus Report Checker')
-def main():
-    # Specify the directory containing the PDF files
-    pdf_directory = "/opt/app/agent/parkee-agent/reportsSaver/"
-
+def main(pdf_directory):
     # Process all PDF files in the directory
     output_data = process_pdf_directory(pdf_directory)
 
     # Generate output JSON file
-    output_filename = f"parkee_report_minus_digit_{datetime.now().strftime('%y-%m-%d_%H:%M:%S')}.json"
+    output_filename = f"{pdf_directory}/parkee_report_minus_digit_{datetime.now().strftime('%y-%m-%d_%H:%M:%S')}.json"
     save_to_json(output_data, output_filename)
+    return pdf_directory
 
-if __name__ == "__main__":
-    main()
+# Disable the direct call so Robot Framework can use the main function instead.
+# if __name__ == "__main__":
+#     main("/opt/app/agent/parkee-agent/reportsSaver/")
