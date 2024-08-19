@@ -1,0 +1,24 @@
+[
+  {
+    "reportName": "laporan sticker juli.pdf",
+    "checkTime": "2024-08-19T07:22:53.001801+00:00",
+    "minusData": {
+      "lineOf3": [
+        "-768,334,104",
+        "-1,171,925,761"
+      ]
+    }
+  },
+  {
+    "reportName": "sticker bulanan (juli).pdf",
+    "checkTime": "2024-08-19T07:22:53.147970+00:00",
+    "minusData": {
+      "lineOf3": [
+        "-1,618,599",
+        "-1,070,909",
+        "-702,142",
+        "-1,051,259"
+      ]
+    }
+  }
+]
