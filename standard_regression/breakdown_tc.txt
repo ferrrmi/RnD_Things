@@ -1,0 +1,36 @@
+standard case limitasi fitur (full offline)
+
+--- backoffice ---
+kasir:
+valet
+basic kasir price
+basic kasir price with coupon
+
+--- manless ---
+member:
+wuzz
+prepaid
+cp
+
+casual:
+prepaid free (price 0)
+prepaid have price
+prepaid have price with coupon
+
+lpr:
+match (casual, member)
+no match (casual, member)
+
+free:
+mastercard
+
+speed trx
+
+specification:
+tag -> standard_regression
+dispenser base version -> v3
+manless ui version -> v3
+text -> small
+using restored database
+price: CAR FREE 0
+price: CAR PAID 7000

@@ -31,10 +31,10 @@ def process_pdf_directory(directory):
         if filename.endswith(".pdf"):
             pdf_path = os.path.join(directory, filename)
             print(f"\nProcessing: {filename}")
-            
+
             full_text = extract_pdf_text(pdf_path)
             last_10_lines = get_last_10_lines_after_total(full_text)
-            
+
             if last_10_lines:
                 print("Last 10 lines after TOTAL:")
                 minus_data = {}
@@ -48,7 +48,7 @@ def process_pdf_directory(directory):
                     print("Negative numbers found:")
                     for line, numbers in minus_data.items():
                         print(f"{line}: {', '.join(numbers)}")
-                    
+
                     results.append({
                         "reportName": filename,
                         "checkTime": datetime.now(pytz.utc).isoformat(),
@@ -58,7 +58,7 @@ def process_pdf_directory(directory):
                     print("No negative numbers found in the specified format.")
             else:
                 print("No 'TOTAL' line found in the document.")
-    
+
     return results
 
 def save_to_json(data, output_filename):
@@ -66,8 +66,21 @@ def save_to_json(data, output_filename):
         json.dump(data, json_file, indent=2)
     print(f"\nOutput saved to {output_filename}")
 
+def get_latest_json_file(directory):
+    json_files = [f for f in os.listdir(directory) if f.startswith('parkee_report_minus_digit') and f.endswith('.json')]
+    if not json_files:
+        return None, None
+    latest_file = max(json_files, key=lambda f: os.path.getmtime(os.path.join(directory, f)))
+    latest_file_path = os.path.join(directory, latest_file)
+    
+    # Read the content of the latest file
+    with open(latest_file_path, 'r') as file:
+        file_content = json.load(file)
+    
+    return latest_file, file_content
+
 @library(scope='GLOBAL')
-@keyword(name='Minus Report Checker')
+@keyword(name='Check Minus Digit')
 def main(pdf_directory):
     # Process all PDF files in the directory
     output_data = process_pdf_directory(pdf_directory)
@@ -75,7 +88,10 @@ def main(pdf_directory):
     # Generate output JSON file
     output_filename = f"{pdf_directory}/parkee_report_minus_digit_{datetime.now().strftime('%y-%m-%d_%H:%M:%S')}.json"
     save_to_json(output_data, output_filename)
-    return pdf_directory
+
+    # Return the name and content of the latest JSON file
+    latest_file_name, latest_file_content = get_latest_json_file(pdf_directory)
+    return latest_file_name, latest_file_content
 
 # Disable the direct call so Robot Framework can use the main function instead.
 # if __name__ == "__main__":

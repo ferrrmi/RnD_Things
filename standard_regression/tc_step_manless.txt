@@ -1,0 +1,149 @@
+
+# ============================= #
+# MANLESS IN                    #
+# ============================= #
+Suite: POS MASUK MANLESS / MANLESS IN
+TC: Prepaid Card With LPR In
+Themes: Casual (prepaid free, prepaid have price, prepaid have price with coupon)
+Scope: Casual Prepaid, LPR, Create Ticket
+- open login production
+- select gate manless in
+- hit loop
+- validate loop hitted
+- sent mock lpr plate
+- sent mock prepaid card
+- validate selamat datang
+- validate ticket with query -> UNPAID, PLATE -> terms: plate is not null
+- validate loop gone after 10 seconds
+
+Suite: POS MASUK MANLESS / MANLESS IN
+TC: Member Smart Card With LPR In
+Themes: Member (Smart Card)
+Scope: Member Smart Card, LPR, Create Ticket
+- open login production
+- select gate manless in
+- hit loop
+- validate loop hitted
+- sent mock lpr plate
+- sent mock member smart card
+- validate selamat datang
+- validate ticket with query -> UNPAID
+- validate loop gone after 10 seconds
+
+Suite: POS MASUK MANLESS / MANLESS IN
+TC: Member Wuzz With LPR In
+Themes: Member (Wuzz Member)
+Scope: Member Wuzz, LPR, Create Ticket
+- open login production
+- select gate manless in
+- hit loop
+- validate loop hitted
+- sent mock lpr plate
+- sent mock wuzz member
+- validate selamat datang
+- validate ticket with query -> UNPAID
+- validate loop gone after 10 seconds
+
+# ============================= #
+# MANLESS OUT                   #
+# ============================= #
+Suite: POS KELUAR MANLESS / MANLESS OUT
+TC: Prepaid Card Free Out With LPR Match
+Themes: Casual Prepaid Free Price 0 With LPR Match
+Scope: Casual Prepaid, LPR match, verification, Validation ticket, free case, positive case
+- open login production
+- select gate manless out
+- hit loop
+- validate loop hitted
+- click free car
+- sent mock match lpr plate
+- sent mock prepaid card
+- validate show page selamat jalan
+- validate ticket with query -> DONE
+- validate loop gone after 10 seconds
+
+Suite: POS KELUAR MANLESS / MANLESS OUT
+TC: Prepaid Card Free Out With LPR Not Match
+Themes: Casual Prepaid Free Price 0 With LPR Not Match
+Scope: Casual Prepaid, LPR not match, verification, Validation ticket, free case, positive case
+- open login production
+- select gate manless out
+- hit loop
+- validate loop hitted
+- click free car
+- sent mock false lpr plate
+- sent mock prepaid card
+- validate show verify page (tombol hijau merah)
+- verify transaction (tombol hijau) -> positive case
+- validate show page selamat jalan
+- validate ticket with query -> DONE
+- validate loop gone after 10 seconds
+
+Suite: POS KELUAR MANLESS / MANLESS OUT
+TC: Prepaid Card Free Out With LPR Not Match
+Themes: Casual Prepaid Free Price 0 With LPR Not Match
+Scope: Casual Prepaid, LPR, verification, Validation ticket, free case, negative case
+- open login production
+- select gate manless out
+- hit loop
+- validate loop hitted
+- click free car
+- sent mock false lpr plate
+- sent mock prepaid card
+- validate show verify page (tombol hijau merah)
+- verify transaction (tombol merah) -> negative case
+- validate show page verification failed
+- validate ticket with query -> UNPAID
+- validate loop gone after 10 seconds
+
+Suite: POS KELUAR MANLESS / MANLESS OUT
+TC: Prepaid Card Free With LPR Out
+Themes: Casual Prepaid Free Price 0
+Scope: Casual Prepaid, LPR, verification, Validation ticket, free case, negative case
+- open login production
+- select gate manless out
+- hit loop
+- validate loop hitted
+- sent mock lpr plate
+- sent mock prepaid card
+- validate show verify page (tombol hijau merah)
+- click free car
+- verify transaction (tombol merah) -> negative case
+- validate show page verification failed
+- validate ticket with query -> UNPAID
+- validate loop gone after 10 seconds
+
+Suite: POS KELUAR MANLESS / MANLESS OUT
+TC: Prepaid Card With Price With LPR Out
+Themes: Casual Prepaid With Price
+Scope: Casual Prepaid, LPR, verification, Validation ticket, with price, positive case
+- open login production
+- select gate manless out
+- hit loop
+- validate loop hitted
+- sent mock lpr plate
+- sent mock prepaid card
+- validate show verify page (tombol hijau merah)
+- click paid car
+- verify transaction (tombol hijau) -> positive case
+- validate show page asking payment
+- validate page asking payment amount more than 0
+- validate ticket with query -> UNPAID
+- validate loop gone after 10 seconds
+
+Suite: POS KELUAR MANLESS / MANLESS OUT
+TC: Prepaid Card With Price With LPR Out
+Themes: Casual Prepaid With Price
+Scope: Casual Prepaid, LPR, Validation Transaction
+- open login production
+- select gate manless out
+- hit loop
+- validate loop hitted
+- sent mock lpr plate
+- sent mock prepaid card
+- validate show verify page (tombol hijau merah)
+- click paid car
+- verify transaction (tombol merah) -> negative case
+- validate show page verification failed
+- validate ticket with query -> UNPAID
+- validate loop gone after 10 seconds
