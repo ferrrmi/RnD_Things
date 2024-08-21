@@ -1,8 +1,9 @@
 parkee-agent-robot-framework
+├── img
+│   └── standard_regression
 ├── resources
 │   └── standard_regression
-│       ├── manless.resource
-│       └── cashier.resource
+│       └── standard_regression.resource
 └── tests
     └── standard_regression
         └── standard_regression.robot

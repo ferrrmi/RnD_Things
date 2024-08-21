@@ -97,53 +97,18 @@ Scope: Casual Prepaid, LPR, verification, Validation ticket, free case, negative
 - validate loop gone after 10 seconds
 
 Suite: POS KELUAR MANLESS / MANLESS OUT
-TC: Prepaid Card Free With LPR Out
-Themes: Casual Prepaid Free Price 0
-Scope: Casual Prepaid, LPR, verification, Validation ticket, free case, negative case
+TC: Prepaid Card With Price More Than 0 With LPR Match
+Themes: Casual Prepaid With Price More Than 0 With LPR Match
+Scope: Casual Prepaid, LPR match, verification, Validation ticket, free case, positive case
 - open login production
 - select gate manless out
 - hit loop
 - validate loop hitted
-- sent mock lpr plate
-- sent mock prepaid card
-- validate show verify page (tombol hijau merah)
 - click free car
-- verify transaction (tombol merah) -> negative case
-- validate show page verification failed
-- validate ticket with query -> UNPAID
-- validate loop gone after 10 seconds
-
-Suite: POS KELUAR MANLESS / MANLESS OUT
-TC: Prepaid Card With Price With LPR Out
-Themes: Casual Prepaid With Price
-Scope: Casual Prepaid, LPR, verification, Validation ticket, with price, positive case
-- open login production
-- select gate manless out
-- hit loop
-- validate loop hitted
-- sent mock lpr plate
+- sent mock match lpr plate
 - sent mock prepaid card
-- validate show verify page (tombol hijau merah)
-- click paid car
-- verify transaction (tombol hijau) -> positive case
 - validate show page asking payment
-- validate page asking payment amount more than 0
-- validate ticket with query -> UNPAID
-- validate loop gone after 10 seconds
-
-Suite: POS KELUAR MANLESS / MANLESS OUT
-TC: Prepaid Card With Price With LPR Out
-Themes: Casual Prepaid With Price
-Scope: Casual Prepaid, LPR, Validation Transaction
-- open login production
-- select gate manless out
-- hit loop
-- validate loop hitted
-- sent mock lpr plate
-- sent mock prepaid card
-- validate show verify page (tombol hijau merah)
-- click paid car
-- verify transaction (tombol merah) -> negative case
-- validate show page verification failed
+- validate show page asking payment - LPR Match
+- validate show page asking payment - Price more than 0
 - validate ticket with query -> UNPAID
 - validate loop gone after 10 seconds
