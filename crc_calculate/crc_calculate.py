@@ -1,6 +1,6 @@
 import binascii
 
-smart_tag_number = "E2004EC83B8798CA3021478B"
+smart_tag_number = "E2004EC83B82B94A3021340D"
 smart_tag_number_hex = " ".join([smart_tag_number[i:i+2] for i in range(0, len(smart_tag_number), 2)])
 input_hex = f"AA AA FF 18 C1 01 00 C7 30 00 {smart_tag_number_hex} 8F 52 00"
 input_bytes = bytes.fromhex(input_hex.replace(" ", ""))
