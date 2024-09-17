@@ -21,7 +21,7 @@ get_cpu_info() {
     sockets=$(lscpu | grep "Socket(s)" | awk '{print $2}')
     realCores=$((realCores * sockets))
     threadsPerCore=$((totalCores / realCores))
-    echo "{\"model\":\"$cpuModel\",\"totalCores\":$totalCores,\"realCores\":$realCores,\"threadsPerCore\":$threadsPerCore}"
+    echo "\"model\":\"$cpuModel\",\"totalCores\":$totalCores,\"realCores\":$realCores,\"threadsPerCore\":$threadsPerCore"
 }
 
 # Function to get memory info
@@ -30,8 +30,7 @@ get_memory_info() {
     slotMemory=$(dmidecode -t memory | grep -c "Size:")
     usedSlot=$(dmidecode -t memory | grep -c "Size: [0-9]")
     ddrVersion=$(dmidecode -t memory | grep "Type:" | awk '{print $2}' | head -n1)
-    
-    echo "{\"total\":$totalMem,\"slotMemory\":$slotMemory,\"usedSlot\":$usedSlot,\"ddrVersion\":\"$ddrVersion\"}"
+    echo "\"total\":$totalMem,\"slotMemory\":$slotMemory,\"usedSlot\":$usedSlot,\"ddrVersion\":\"$ddrVersion\""
 }
 
 # Function to get disk info
@@ -39,25 +38,21 @@ get_disk_info() {
     total=$(df -BM / | awk 'NR==2 {gsub("M", "", $2); print $2}')
     used=$(df -BM / | awk 'NR==2 {gsub("M", "", $3); print $3}')
     available=$(df -BM / | awk 'NR==2 {gsub("M", "", $4); print $4}')
-    
     diskModel=$(lsblk -no MODEL | awk 'NF' | head -n1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    
-    # Determine if the disk is SSD or HDD
     rota=$(lsblk -ndo ROTA /dev/$(lsblk -ndo NAME | head -n1) | awk '{print $1}')
     if [ "$rota" == "0" ]; then
         diskType="SSD"
     else
         diskType="HDD"
     fi
-    
-    echo "{\"usage\":{\"total\":$total,\"used\":$used,\"available\":$available},\"model\":\"$diskModel\",\"type\":\"$diskType\"}"
+    echo "\"usage\":{\"total\":$total,\"used\":$used,\"available\":$available},\"model\":\"$diskModel\",\"type\":\"$diskType\""
 }
 
 # Function to get network info
 get_network_info() {
     primaryInterface=$(ip route | awk '/default/ {print $5}' | head -n1)
     ipAddress=$(ip -4 addr show $primaryInterface | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-    echo "{\"interface\":\"$primaryInterface\",\"ipAddress\":\"$ipAddress\"}"
+    echo "\"interface\":\"$primaryInterface\",\"ipAddress\":\"$ipAddress\""
 }
 
 # Function to get OS info
@@ -71,20 +66,24 @@ get_os_info() {
         if (key == "description") $2 = substr($0, index($0, $2)); # Keep the entire description, including colons
         printf "\"%s\":\"%s\",", key, $2
     }' | sed 's/,$//')
-    echo "{$osInfo}"
+    echo "$osInfo"
 }
 
 # Function to get location code
 get_location_code() {
-    locationCode=$(/opt/app/agent/parkee-agent/server.properties | grep 'db=' | cut -d'=' -f2- | sed 's/agent_//' | awk '{print toupper($0)}')
-    echo "\"$locationCode\""
+    locationCode=$(grep 'db=' /opt/app/agent/parkee-agent/server.properties | cut -d'=' -f2- | sed 's/agent_//' | awk '{print toupper($0)}')
+    echo "$locationCode"
 }
 
 # Function to get motherboard info
 get_motherboard_info() {
     manufacturer=$(dmidecode -s baseboard-manufacturer)
     product=$(dmidecode -s baseboard-product-name)
-    echo "{\"manufacturer\":\"$manufacturer\",\"model\":\"$product\"}"
+    echo "\"manufacturer\":\"$manufacturer\",\"model\":\"$product\""
+}
+
+remove_current_json_file() {
+    rm /tmp/client_specification.json
 }
 
 # Main function to collect all info and create JSON
@@ -96,24 +95,24 @@ collect_info() {
     osInfo=$(get_os_info)
     locationCode=$(get_location_code)
     motherboardInfo=$(get_motherboard_info)
-
-    jsonOutput=$(cat << EOF
+    uuidV4=$(generate_uuid)
+    
+    outputFile="/tmp/client_specification.json"
+    
+    cat << EOF > "$outputFile"
 {
-    "cpu": $cpuInfo,
-    "memory": $memoryInfo,
-    "disk": $diskInfo,
-    "network": $networkInfo,
-    "os": $osInfo,
-    "locationCode": $locationCode,
-    "motherboard": $motherboardInfo
+    "cpu": {$cpuInfo},
+    "memory": {$memoryInfo},
+    "disk": {$diskInfo},
+    "network": {$networkInfo},
+    "os": {$osInfo},
+    "locationCode": "$locationCode",
+    "motherboard": {$motherboardInfo}
 }
 EOF
-)
-
-    echo "$jsonOutput" | jq '.' > /tmp/client_specification.json
+    echo "Hardware specification collected and saved to $outputFile"
 }
 
 # Run the main function
+remove_current_json_file
 collect_info
-
-echo "Hardware specification collected and saved to /tmp/client_specification.json"
