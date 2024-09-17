@@ -1,0 +1,5 @@
+pandas
+asyncio
+aiohttp
+aioping
+ping3
