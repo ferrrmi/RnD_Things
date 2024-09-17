@@ -82,6 +82,12 @@ get_motherboard_info() {
     echo "\"manufacturer\":\"$manufacturer\",\"model\":\"$product\""
 }
 
+# Function to get the PC name
+get_pc_name() {
+    pcName=$(hostname)
+    echo "$pcName"
+}
+
 remove_current_json_file() {
     rm /tmp/client_specification.json
 }
@@ -95,12 +101,13 @@ collect_info() {
     osInfo=$(get_os_info)
     locationCode=$(get_location_code)
     motherboardInfo=$(get_motherboard_info)
-    uuidV4=$(generate_uuid)
+    pcName=$(get_pc_name)
     
     outputFile="/tmp/client_specification.json"
     
     cat << EOF > "$outputFile"
 {
+    "pcName": "$pcName",
     "cpu": {$cpuInfo},
     "memory": {$memoryInfo},
     "disk": {$diskInfo},
