@@ -1,16 +1,14 @@
 #!/bin/bash
 
-# Telegram credentials
+# Configuration
 BOT_TOKEN="5931041111:AAF7aAfq0taY22mLoEw-TvcrGfX30oOaWRM"
 API_ENDPOINT="https://api.telegram.org/bot$BOT_TOKEN/sendMessage"
-CHAT_ID="-1002123325894"
-
-# Define the directory containing the HTML files
+# CHAT_ID="-1002123325894"
+CHAT_ID="-1002004613421"
 DIR="/home/server-qaa/Codes/docker_files/PAA/index/postman"
-# Define the output JSON file
 OUTPUT_FILE="$DIR/data.json"
-# Define the error log file
 ERROR_LOG="$DIR/error.log"
+SCRIPT_LOG="$DIR/generate_data_json.log"
 
 # Function to log errors
 log_error() {
@@ -20,79 +18,122 @@ log_error() {
 # Function to send Telegram message
 send_telegram_message() {
     local message="$1"
-    curl -s -X POST "$API_ENDPOINT" -d chat_id="$CHAT_ID" -d text="$message" -d "parse_mode=HTML"
+    local response
+
+    if [[ -z "$API_ENDPOINT" || -z "$CHAT_ID" ]]; then
+        echo "Error: API endpoint or chat ID is not set."
+        return 1
+    fi
+
+    # Print the message before sending
+    echo "Sending the following message to Telegram:"
+    echo -e "$message"
+    echo "----------------------------------------"
+
+    response=$(curl -s -X POST "$API_ENDPOINT" \
+        -d "chat_id=$CHAT_ID" \
+        -d "text=$message" \
+        -d "parse_mode=HTML")
+
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to send Telegram message. Curl error: $?"
+        return 1
+    fi
+
+    if echo "$response" | jq -e '.ok == false' > /dev/null; then
+        echo "Error: Telegram API returned an error. Response: $response"
+        return 1
+    fi
+
+    echo "Message sent successfully to Telegram."
+    return 0
 }
 
-# Initialize the JSON structure
-echo "[" > "$OUTPUT_FILE"
-
-# Initialize error log
-echo "Error log for script run on $(date '+%Y-%m-%d %H:%M:%S')" > "$ERROR_LOG"
-
-# Initialize variables for notification
-notification_message="<b>-- Newman Bulk Test Notify --</b>\n\n"
-current_date=$(date '+%Y-%m-%d')
-
-# Iterate over each HTML file in the directory that matches the 'report' pattern
-first=1
-for file in "$DIR"/html/*report*.html; do
-    # Check if the file exists to avoid processing non-matching patterns
-    if [ -e "$file" ]; then
-        # Get the file name
-        fileName=$(basename "$file")
-        
-        # Get the relative file path
-        filePath="/postman/html/$fileName"
-        
-        # Get the last modification time in a readable format
-        dateTime=$(stat -c %y "$file" | cut -d'.' -f1)  # Remove milliseconds
-
-        # Extract the number of failed tests
-        failedTests=$(grep -A1 "Total Failed Tests" "$file" | grep "display" | sed 's/<[^>]*>//g' | tr -d '\n ')
-
-        # Check if failedTests is empty or not a number
-        if [ -z "$failedTests" ] || ! [[ "$failedTests" =~ ^[0-9]+$ ]]; then
-            log_error "$fileName" "Failed to extract number of failed tests"
-            failedTests=0  # Set a default value
-        fi
-
-        # Determine test run status
-        if [ "$failedTests" -gt 0 ]; then
-            testRunStatus="FAILED"
-        else
-            testRunStatus="PASSED"
-        fi
-        
-        # Append file information to the JSON file
-        if [ $first -eq 1 ]; then
-            first=0
-        else
-            echo "," >> "$OUTPUT_FILE"
-        fi
-        
-        echo "    {" >> "$OUTPUT_FILE"
-        echo "        \"fileName\": \"$fileName\"," >> "$OUTPUT_FILE"
-        echo "        \"filePath\": \"$filePath\"," >> "$OUTPUT_FILE"
-        echo "        \"dateTime\": \"$dateTime\"," >> "$OUTPUT_FILE"
-        echo "        \"failedTests\": $failedTests," >> "$OUTPUT_FILE"
-        echo "        \"testRunStatus\": \"$testRunStatus\"" >> "$OUTPUT_FILE"
-        echo "    }" >> "$OUTPUT_FILE"
-
-        # Append to notification message
-        notification_message+="<b>Date:</b> $dateTime\n"
-        notification_message+="<b>Filename:</b> $fileName\n"
-        notification_message+="<b>Status:</b> $testRunStatus\n"
-        notification_message+="<b>Total Failed Tests:</b> $failedTests\n\n"
+# Function to process a single HTML file
+process_html_file() {
+    local file="$1"
+    local fileName=$(basename "$file")
+    local filePath="/postman/html/$fileName"
+    local dateTime=$(stat -c %y "$file" | cut -d'.' -f1)
+    local fileDate=$(date -d "$dateTime" +%Y-%m-%d)
+    local currentDate=$(date +%Y-%m-%d)
+    
+    # Only process files from the current date
+    if [[ "$fileDate" != "$currentDate" ]]; then
+        return 1
     fi
-done
+    
+    local failedTests=$(grep -A1 "Total Failed Tests" "$file" | grep "display" | sed -E 's/<[^>]+>//g' | tr -d '[:space:]')
+    
+    if [[ ! "$failedTests" =~ ^[0-9]+$ ]]; then
+        log_error "$fileName" "Failed to extract number of failed tests"
+        failedTests=0
+    fi
+    
+    local testRunStatus=$([[ "$failedTests" -eq 0 ]] && echo "PASSED" || echo "FAILED")
+    
+    echo "," >> "$OUTPUT_FILE"
+    cat << EOF >> "$OUTPUT_FILE"
+    {
+        "fileName": "$fileName",
+        "filePath": "$filePath",
+        "dateTime": "$dateTime",
+        "failedTests": $failedTests,
+        "testRunStatus": "$testRunStatus"
+    }
+EOF
+    
+    # Return the test run status
+    [[ "$testRunStatus" == "PASSED" ]] && return 0 || return 2
+}
 
-# Close the JSON array
-echo "]" >> "$OUTPUT_FILE"
+# Function to process all HTML files
+process_html_files() {
+    local total_runs=0
+    local passed_runs=0
+    local failed_runs=0
+    
+    for file in "$DIR"/html/*report*.html; do
+        if [[ -e "$file" ]]; then
+            process_html_file "$file"
+            case $? in
+                0) ((passed_runs++)); ((total_runs++)) ;;
+                2) ((failed_runs++)); ((total_runs++)) ;;
+            esac
+        fi
+    done
+    
+    if [[ $total_runs -gt 0 ]]; then
+        notification_message="<b>-- Newman Bulk Test Notify --</b>
 
-# Print completion message
-echo "JSON data generated and saved to $OUTPUT_FILE"
-echo "Error log saved to $ERROR_LOG"
+<b>Date:</b> $(date +%Y-%m-%d)
+<b>Total Test Runs Passed:</b> $passed_runs
+<b>Total Test Runs Failed:</b> $failed_runs"
+        return 0
+    else
+        echo "No test run files found for today's date ($(date +%Y-%m-%d))"
+        return 1
+    fi
+}
 
-# Send Telegram notification
-send_telegram_message "$notification_message"
-echo "Telegram notification sent for all processed files."
+# Main function
+main() {
+    echo "Error log for script run on $(date '+%Y-%m-%d %H:%M:%S')" > "$ERROR_LOG"
+
+    echo "[" > "$OUTPUT_FILE"
+    if process_html_files; then
+        echo "]" >> "$OUTPUT_FILE"
+        echo "JSON data generated and saved to $OUTPUT_FILE"
+        echo "Error log saved to $ERROR_LOG"
+        send_telegram_message "$notification_message"
+    else
+        echo "]" >> "$OUTPUT_FILE"
+        echo "No data to process. JSON file contains empty array."
+    fi
+}
+
+# Run the main function and redirect all output to the log file
+{
+    truncate -s 0 "$SCRIPT_LOG"
+    main &> "$SCRIPT_LOG"
+}
