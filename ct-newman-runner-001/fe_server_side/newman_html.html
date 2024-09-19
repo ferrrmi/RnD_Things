@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Newman Location & Update Postman URL</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0-alpha1/css/bootstrap.min.css" />
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+        }
+
+        .form-section {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        .form-section h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 20px;
+        }
+
+        .form-section .form-control {
+            border-radius: 5px;
+        }
+
+        .form-section .btn {
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        .alert {
+            display: none;
+            margin-top: 15px;
+        }
+    </style>
+
+    <script>
+        async function addLocation() {
+            const locationForm = document.getElementById("locationForm");
+            const locationData = {
+                location_name: document.getElementById("locationName").value,
+                location_unique_code: document.getElementById("locationCode").value,
+                location_tier: document.getElementById("locationTier").value,
+                location_zerotier_ip_address: document.getElementById("locationIP").value
+            };
+
+            try {
+                const response = await fetch('/api/location/properties/add-location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(locationData)
+                });
+
+                const result = await response.json();
+                showAlert('locationAlert', 'success', 'Location added successfully!');
+                locationForm.reset();
+            } catch (error) {
+                showAlert('locationAlert', 'danger', 'Error adding location. Please try again.');
+            }
+        }
+
+        async function addNewmanURL() {
+            const newmanForm = document.getElementById("newmanForm");
+            const newmanData = {
+                url: document.getElementById("newmanURL").value,
+                iteration: document.getElementById("iteration").value
+            };
+
+            try {
+                const response = await fetch('/api/newman/add/url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(newmanData)
+                });
+
+                const result = await response.json();
+                showAlert('newmanAlert', 'success', 'Newman URL updated successfully!');
+                newmanForm.reset();
+            } catch (error) {
+                showAlert('newmanAlert', 'danger', 'Error updating Newman URL. Please try again.');
+            }
+        }
+
+        function showAlert(alertId, type, message) {
+            const alertElement = document.getElementById(alertId);
+            alertElement.textContent = message;
+            alertElement.className = `alert alert-${type}`;
+            alertElement.style.display = 'block';
+
+            setTimeout(() => {
+                alertElement.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <!-- Location Section -->
+            <div class="col-md-6 mb-4">
+                <div class="form-section">
+                    <h2>Add New Newman Test Location</h2>
+                    <form id="locationForm">
+                        <div class="mb-3">
+                            <label for="locationName" class="form-label">Location Name</label>
+                            <input type="text" class="form-control" id="locationName" placeholder="Enter location name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="locationCode" class="form-label">Location Unique Code</label>
+                            <input type="text" class="form-control" id="locationCode" placeholder="Enter location unique code">
+                        </div>
+                        <div class="mb-3">
+                            <label for="locationTier" class="form-label">Location Tier</label>
+                            <input type="text" class="form-control" id="locationTier" placeholder="Enter location tier (e.g. Diamond)">
+                        </div>
+                        <div class="mb-3">
+                            <label for="locationIP" class="form-label">Location Zerotier IP Address</label>
+                            <input type="text" class="form-control" id="locationIP" placeholder="Enter IP address">
+                        </div>
+                        <button type="button" class="btn btn-primary w-100" onclick="addLocation()">Submit Location</button>
+                    </form>
+                    <div id="locationAlert" class="alert" role="alert"></div>
+                </div>
+            </div>
+
+            <!-- Newman URL Section -->
+            <div class="col-md-6 mb-4">
+                <div class="form-section">
+                    <h2>Update Postman URL</h2>
+                    <form id="newmanForm">
+                        <div class="mb-3">
+                            <label for="newmanURL" class="form-label">New Postman URL</label>
+                            <input type="text" class="form-control" id="newmanURL" placeholder="Enter New Postman URL">
+                        </div>
+                        <div class="mb-3">
+                            <label for="iteration" class="form-label">Day Iteration</label>
+                            <input type="number" class="form-control" id="iteration" placeholder="Enter day iteration" step="1">
+                        </div>
+                        <button type="button" class="btn btn-success w-100" onclick="addNewmanURL()">Submit URL</button>
+                    </form>
+                    <div id="newmanAlert" class="alert" role="alert"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0-alpha1/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
