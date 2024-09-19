@@ -8,6 +8,8 @@ import logging
 from datetime import datetime
 import psycopg2
 from psycopg2 import Error
+import fcntl
+import sys
 
 # Configure logging
 logging.basicConfig(
@@ -35,6 +37,17 @@ def print_styled(message, style="info"):
         logging.error(message)
     else:
         logging.info(message)
+
+# Ensure single instance of the script is running
+def ensure_single_instance():
+    pid_file = '/tmp/newman_script.pid'
+    try:
+        fp = open(pid_file, 'w')
+        fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except IOError:
+        print_styled("Another instance is already running. Exiting.", "warning")
+        sys.exit(0)
+    return fp  # Keep the file open to maintain the lock
 
 # New function to clean the log file
 def clean_log_file(log_file_path):
@@ -235,12 +248,15 @@ def set_newman_status(status):
         print_styled(f"Error setting Newman status: {e}", "error")
 
 def main():
+    # Ensure only one instance of the script is running
+    ensure_single_instance()
+    
     url = "http://localhost:8080/location/properties/diamond/all"
     base_env_path = "./env/based_env.json"
     env_dir = "./env/"
     result_dir = "./connection_result/"
     
-    # Clean directories 
+    # Clean directories
     clean_directory("./results")
     clean_directory("./log")
 

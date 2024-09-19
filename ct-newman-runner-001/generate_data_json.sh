@@ -3,7 +3,6 @@
 # Configuration
 BOT_TOKEN="5931041111:AAF7aAfq0taY22mLoEw-TvcrGfX30oOaWRM"
 API_ENDPOINT="https://api.telegram.org/bot$BOT_TOKEN/sendMessage"
-# CHAT_ID="-1002123325894"
 CHAT_ID="-1002004613421"
 DIR="/home/server-qaa/Codes/docker_files/PAA/index/postman"
 OUTPUT_FILE="$DIR/data.json"
@@ -57,12 +56,7 @@ process_html_file() {
     local dateTime=$(stat -c %y "$file" | cut -d'.' -f1)
     local fileDate=$(date -d "$dateTime" +%Y-%m-%d)
     local currentDate=$(date +%Y-%m-%d)
-    
-    # Only process files from the current date
-    if [[ "$fileDate" != "$currentDate" ]]; then
-        return 1
-    fi
-    
+
     local failedTests=$(grep -A1 "Total Failed Tests" "$file" | grep "display" | sed -E 's/<[^>]+>//g' | tr -d '[:space:]')
     
     if [[ ! "$failedTests" =~ ^[0-9]+$ ]]; then
@@ -72,19 +66,23 @@ process_html_file() {
     
     local testRunStatus=$([[ "$failedTests" -eq 0 ]] && echo "PASSED" || echo "FAILED")
     
-    echo "," >> "$OUTPUT_FILE"
+    # Append to JSON file
+    echo "{" >> "$OUTPUT_FILE"
     cat << EOF >> "$OUTPUT_FILE"
-    {
         "fileName": "$fileName",
         "filePath": "$filePath",
         "dateTime": "$dateTime",
         "failedTests": $failedTests,
         "testRunStatus": "$testRunStatus"
-    }
 EOF
-    
-    # Return the test run status
-    [[ "$testRunStatus" == "PASSED" ]] && return 0 || return 2
+    echo "}" >> "$OUTPUT_FILE"
+
+    # Return status if this is for today
+    if [[ "$fileDate" == "$currentDate" ]]; then
+        [[ "$testRunStatus" == "PASSED" ]] && return 0 || return 2
+    else
+        return 1  # Not today's file
+    fi
 }
 
 # Function to process all HTML files
@@ -92,9 +90,20 @@ process_html_files() {
     local total_runs=0
     local passed_runs=0
     local failed_runs=0
-    
+    local first_entry=true
+
+    # Start JSON array
+    echo "[" > "$OUTPUT_FILE"
+
     for file in "$DIR"/html/*report*.html; do
-        if [[ -e "$file" ]]; then
+        if [[ -f "$file" ]]; then  # Check if file exists and is a regular file
+            # Avoid adding a comma before the first entry
+            if ! $first_entry; then
+                echo "," >> "$OUTPUT_FILE"
+            else
+                first_entry=false
+            fi
+
             process_html_file "$file"
             case $? in
                 0) ((passed_runs++)); ((total_runs++)) ;;
@@ -102,7 +111,10 @@ process_html_files() {
             esac
         fi
     done
-    
+
+    # Close JSON array
+    echo "]" >> "$OUTPUT_FILE"
+
     if [[ $total_runs -gt 0 ]]; then
         notification_message="<b>-- Newman Bulk Test Notify --</b>
 
@@ -116,18 +128,16 @@ process_html_files() {
     fi
 }
 
+
 # Main function
 main() {
     echo "Error log for script run on $(date '+%Y-%m-%d %H:%M:%S')" > "$ERROR_LOG"
 
-    echo "[" > "$OUTPUT_FILE"
     if process_html_files; then
-        echo "]" >> "$OUTPUT_FILE"
         echo "JSON data generated and saved to $OUTPUT_FILE"
         echo "Error log saved to $ERROR_LOG"
         send_telegram_message "$notification_message"
     else
-        echo "]" >> "$OUTPUT_FILE"
         echo "No data to process. JSON file contains empty array."
     fi
 }
