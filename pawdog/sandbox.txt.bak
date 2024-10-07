@@ -1,0 +1,14 @@
+[Unit]
+Requires=zookeeper.service
+After=zookeeper.service
+
+[Service]
+Type=simple
+User=root
+Environment="KAFKA_OPTS=-javaagent:/etc/kafka/libs/jmx_prometheus_javaagent.jar=7075:/etc/kafka/config/jmx_exporter.yml"
+ExecStart=/bin/sh -c '/etc/kafka/bin/kafka-server-start.sh /etc/kafka/config/server.properties > /etc/kafka/kafka.log 2>&1'
+ExecStop=/etc/kafka/bin/kafka-server-stop.sh
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
